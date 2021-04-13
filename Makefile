@@ -46,8 +46,16 @@ DOCKER_UPDATE_SQLX_OFFLINE_MODE:
 	# https://www.lpalmieri.com/posts/2020-11-01-zero-to-production-5-how-to-deploy-a-rust-application/
 	cargo sqlx prepare
 
+# Info: https://blog.jaimyn.dev/how-to-build-multi-architecture-docker-images-on-an-m1-mac/
+# docker buildx build --platform linux/amd64,linux/arm64 -t devnul/oauth_server .
+# Нужно увеличить объем оперативной памяти для контейнеров у Docker
+DOCKER_IMAGE_BUILD_CROSS:
+	docker buildx create --use
+	docker buildx build --platform linux/amd64 -t devnul/oauth_server .
+	docker buildx rm
+
 DOCKER_IMAGE_BUILD:
-	docker build -t devnul/oauth_server .
+	docker build devnul/oauth_server .
 
 DOCKER_PUSH_IMAGE:
 	docker push devnul/oauth_server
