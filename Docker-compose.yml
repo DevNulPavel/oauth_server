@@ -1,15 +1,15 @@
 version: "3.8"
 services:
   app:
-    image: devnul/test58_oauth
-    container_name: test58_oauth
+    image: devnul/oauth_server
+    container_name: oauth_server
     restart: always
     env_file:
         - credentials/test_environment_docker.env
     volumes:
-        - ./credentials:/oauth_server/credentials
-        - ./logs:/oauth_server/logs
-        - ./db/oauth_db.sqlite:/oauth_server/db/oauth_db.sqlite
+        - $PWD/credentials:/oauth_server/credentials
+        - $PWD/logs:/oauth_server/logs
+        - $PWD/db/oauth_db.sqlite:/oauth_server/db/oauth_db.sqlite
     ports:
         - 8080:8080
     # network_mode: host

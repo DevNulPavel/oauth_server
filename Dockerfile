@@ -2,7 +2,7 @@
 # https://hub.docker.com/_/rust
 FROM rust:1.51.0 as builder
 ENV SQLX_OFFLINE true
-WORKDIR /usr/src/test58_oauth
+WORKDIR /usr/src/oauth_server
 COPY . ./
 RUN cargo build --release
 
@@ -10,15 +10,15 @@ RUN cargo build --release
 FROM debian:10.9
 WORKDIR /oauth_server
 COPY --from=builder \
-    /usr/src/test58_oauth/target/release/test58_oauth \
-    test58_oauth
+    /usr/src/oauth_server/target/release/oauth_server \
+    oauth_server
 COPY --from=builder \
-    /usr/src/test58_oauth/migrations \
+    /usr/src/oauth_server/migrations \
     migrations
 COPY --from=builder \
-    /usr/src/test58_oauth/static \
+    /usr/src/oauth_server/static \
     static
 COPY --from=builder \
-    /usr/src/test58_oauth/templates \
+    /usr/src/oauth_server/templates \
     templates
-CMD ["./test58_oauth"]
+CMD ["./oauth_server"]

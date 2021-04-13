@@ -1,5 +1,5 @@
 [package]
-name = "test58_oauth"
+name = "oauth_server"
 version = "0.1.0"
 authors = ["Pavel Ershov <devnulpavel@gmail.com>"]
 edition = "2018"
