@@ -75,6 +75,7 @@ fn initialize_logs() -> LogGuards{
         .with_thread_names(true)
         .with_thread_ids(true)
         .with_ansi(true)
+        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
         .with_writer(std::io::stdout);
 
     // Логи opentelemetry
