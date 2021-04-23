@@ -49,7 +49,7 @@ pub fn retup_routes(config: &mut web::ServiceConfig) {
                                 .to(http_handlers::login_page)))                         
         .service(web::resource(constants::LOGOUT_PATH)
                     .route(web::route()
-                                .guard(guard::Post())
+                                .guard(guard::Any(guard::Post()).or(guard::Get()))
                                 .to(http_handlers::logout))) 
         .service(web::scope(constants::FACEBOOK_SCOPE_PATH)
                     .service(web::resource(constants::LOGIN_PATH)
