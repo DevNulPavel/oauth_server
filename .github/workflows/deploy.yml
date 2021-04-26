@@ -3,9 +3,9 @@ on:
     workflow_dispatch:
         branches:
             - main
-    push:
-        branches:
-            - main
+    # push:
+    #     branches:
+    #         - main
 # env:
 #     DOCKER_LOGIN: ${{ secrets.DOCKER_LOGIN }}
 #     DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
