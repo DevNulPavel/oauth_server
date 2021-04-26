@@ -6,7 +6,6 @@ on:
 jobs:
     deploy_on_server:
         runs-on: ubuntu-latest
-        needs: build_and_push
         steps:
             - name: Deploy on server
               uses: appleboy/ssh-action@v0.1.3
