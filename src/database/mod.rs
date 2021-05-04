@@ -11,9 +11,7 @@ use tracing::{
     instrument
 };
 use tap::{
-    prelude::{
-        *
-    }
+    TapFallible
 };
 use sqlx::{
     // prelude::{
@@ -47,8 +45,26 @@ pub struct Database{
 impl Database{
     #[instrument(name = "database_open")]
     pub async fn open() -> Database {
-        let sqlite_conn = SqlitePool::connect(&env::var("DATABASE_URL")
-                                                .expect("DATABASE_URL env variable is missing"))
+        let db_url = std::env::var("DATABASE_URL")
+            .expect("Missing DATABASE_URL variable");
+
+        // Создаем файлик с пустой базой данных если его нету
+        {
+            const PREFIX: &str = "sqlite://";
+            assert!(db_url.starts_with(PREFIX), "DATABASE_URL must stats with {}", PREFIX);
+
+            let file_path = std::path::Path::new(db_url.trim_start_matches(PREFIX));
+            if !file_path.exists() {
+                if let Some(dir) = file_path.parent(){
+                    std::fs::create_dir_all(dir)
+                        .expect("Database directory create failed");
+                }
+                std::fs::File::create(file_path)
+                    .expect("Database file create failed");
+            }
+        }
+
+        let sqlite_conn = SqlitePool::connect(&db_url)
             .await
             .expect("Database connection failed");
 
@@ -74,16 +90,14 @@ impl Database{
     #[instrument]
     pub async fn try_to_find_user_uuid_with_fb_id(&self, id: &str) -> Result<Option<String>, AppError>{
         struct Res{
-            user_uuid: String
+            app_user_uuid: String
         }
         let res = sqlx::query_as!(Res,
-                        r#"   
-                            SELECT app_users.user_uuid
-                            FROM app_users 
-                            INNER JOIN facebook_users 
-                                    ON facebook_users.app_user_id = app_users.id
-                            WHERE facebook_users.facebook_uid = ?
-                        "#, id)
+                r#"   
+                    SELECT facebook_users.app_user_uuid
+                    FROM facebook_users 
+                    WHERE facebook_users.facebook_uuid = ?
+                "#, id)
             .fetch_optional(&self.db)
             .await
             .map_err(AppError::from)
@@ -91,7 +105,7 @@ impl Database{
                 error!("Find failed: {}", e); 
             })?
             .map(|val|{
-                val.user_uuid
+                val.app_user_uuid
             });
 
         debug!("User for id = {} found: uuid = {:?}", id, res);
@@ -103,27 +117,45 @@ impl Database{
     pub async fn insert_facebook_user_with_uuid(&self, uuid: &str, fb_uid: &str) -> Result<(), AppError>{
         // Стартуем транзакцию, если будет ошибка, то вызовется rollback автоматически в drop
         // если все хорошо, то руками вызываем commit
-        let transaction = self.db.begin().await?;
+        let transaction = self
+            .db
+            .begin()
+            .await
+            .tap_err(|err|{
+                error!("Transaction start failed: {}", err);
+            })?;
 
-        // TODO: ???
         // Если таблица иммет поле INTEGER PRIMARY KEY тогда last_insert_rowid - это алиас
-        // Но вроде бы наиболее надежный способ - это сделать подзапрос
-        let new_row_id = sqlx::query!(r#"
-                        INSERT INTO app_users(user_uuid)
-                            VALUES (?);
-                        INSERT INTO facebook_users(facebook_uid, app_user_id)
-                            VALUES (?, (SELECT id FROM app_users WHERE user_uuid = ?));
-                    "#, uuid, fb_uid, uuid)
+        sqlx::query!(
+                r#"
+                    INSERT INTO app_users(app_user_uuid)
+                        VALUES (?);
+                "#, uuid)
+            .execute(&self.db)
+            .await
+            .tap_err(|err|{
+                error!("Insert native user failed: {}", err);
+            })?;
+
+        sqlx::query!(
+                r#"
+                    INSERT INTO facebook_users(facebook_uuid, app_user_uuid)
+                    VALUES (?, ?);
+                "#, fb_uid, uuid)
             .execute(&self.db)
             .await
             .tap_err(|err|{
                 error!("Insert facebook user failed: {}", err);
-            })?
-            .last_insert_rowid();
+            })?;
 
-        transaction.commit().await?;
+        transaction
+            .commit()
+            .await
+            .tap_err(|err|{
+                error!("Transaction commit failed: {}", err);
+            })?;
 
-        debug!("New facebook user included: row_id = {}", new_row_id);
+        debug!("New facebook user included");
 
         Ok(())
     }
@@ -137,9 +169,11 @@ impl Database{
         // TODO: ???
         // Если таблица иммет поле INTEGER PRIMARY KEY тогда last_insert_rowid - это алиас
         // Но вроде бы наиболее надежный способ - это сделать подзапрос
+        // TODO: TRANSACTION
         let new_row_id = sqlx::query!(r#"
                                             INSERT INTO facebook_users(facebook_uid, app_user_id)
-                                            VALUES (?, (SELECT id FROM app_users WHERE user_uuid = ?));
+                                            VALUES (?, (SELECT id FROM app_users WHERE user_uuid = ?))
+                                            RETURNING ;
                                         "#, fb_uid, uuid)
             .execute(&self.db)
             .await
@@ -192,6 +226,7 @@ impl Database{
         // TODO: ???
         // Если таблица иммет поле INTEGER PRIMARY KEY тогда last_insert_rowid - это алиас
         // Но вроде бы наиболее надежный способ - это сделать подзапрос
+        // TODO: TRANSACTION
         let new_row_id = sqlx::query!(r#"
                                         INSERT INTO app_users(user_uuid)
                                         VALUES (?);
