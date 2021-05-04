@@ -74,7 +74,8 @@ fn initialize_logs() -> LogGuards{
         // .with_ansi(true)
         // .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
         // .compact()
-        // .pretty()
+        .pretty()
+        // .event_format(tracing_subscriber::fmt::format().pretty())
         .with_writer(std::io::stdout);
 
     // Логи opentelemetry

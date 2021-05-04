@@ -63,18 +63,13 @@ fn get_callback_address(base_url: &str) -> String {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Данный метод вызывается при нажатии на кнопку логина в Facebook
-#[instrument(err, skip(req, app_params, google_params, fb_params), fields(callback_site_address))]
-pub async fn login_with_google(req: actix_web::HttpRequest,
-                               app_params: web::Data<AppEnvParams>,
+#[instrument(err, skip(app_params, google_params, fb_params))]
+pub async fn login_with_google(app_params: web::Data<AppEnvParams>,
                                google_params: web::Data<GoogleEnvParams>,
                                fb_params: web::Data<GoogleEnvParams>) -> Result<web::HttpResponse, AppError> {
-    debug!("Request object: {:?}", req);
 
     // Адрес нашего сайта + адрес коллбека
     let callback_site_address = get_callback_address(app_params.app_base_url.as_str());
-
-    tracing::Span::current()
-        .record("callback_site_address", &tracing::field::display(&callback_site_address));
     
     // Создаем урл, на который надо будет идти для логина
     // https://developers.google.com/identity/protocols/oauth2/web-server#httprest
@@ -104,23 +99,18 @@ pub async fn login_with_google(req: actix_web::HttpRequest,
 pub struct GoogleAuthParams{
     code: String
 }
-#[instrument(err, skip(req, identity, google_params, query_params, app_params, http_client, db), fields(callback_site_address))]
-pub async fn google_auth_callback(req: actix_web::HttpRequest,
-                                  app_params: web::Data<AppEnvParams>,
+#[instrument(err, skip(identity, google_params, query_params, app_params, http_client, db))]
+pub async fn google_auth_callback(app_params: web::Data<AppEnvParams>,
                                   query_params: web::Query<GoogleAuthParams>, 
                                   identity: Identity,
                                   google_params: web::Data<GoogleEnvParams>,
                                   http_client: web::Data<reqwest::Client>,
                                   db: web::Data<Database>) -> Result<web::HttpResponse, AppError> {
-
-    debug!("Request object: {:?}", req);
-    debug!("Google auth callback query params: {:?}", query_params);
+    // debug!("Request object: {:?}", req);
+    // debug!("Google auth callback query params: {:?}", query_params);
 
     // Адрес нашего сайта + адрес коллбека
     let callback_site_address = get_callback_address(app_params.app_base_url.as_str());
-
-    tracing::Span::current()
-        .record("callback_site_address", &tracing::field::display(&callback_site_address));
 
     // Выполняем запрос для получения токена на основании кода у редиректа
     let response = http_client
@@ -146,7 +136,7 @@ pub async fn google_auth_callback(req: actix_web::HttpRequest,
             error!("Google user token request failed: {}", err);
         })?;
 
-    debug!("Google token request response: {:?}", response);
+    debug!(?response, "Token response");
 
     // Выполняем запрос информации о пользователе
     let user_info_data = http_client
@@ -166,18 +156,18 @@ pub async fn google_auth_callback(req: actix_web::HttpRequest,
             error!("Google user info request failed: {}", err);
         })?;
 
-    debug!("Google user info: {:?}", user_info_data);
+    debug!(?user_info_data, "Google user info");
 
     // Получили айдишник пользователя на FB, делаем запрос к базе данных, чтобы проверить наличие нашего пользователя
     let db_res = db
         .try_to_find_user_uuid_with_google_id(&user_info_data.id)
         .await?;
 
-    debug!("Google database search result: {:?}", db_res);
+    debug!(?db_res, "Google database search");
     
     match db_res {
         Some(user_uuid) => {
-            debug!("Our user exists in database with UUID: {:?}", user_uuid);
+            debug!(%user_uuid, "User exists");
 
             // Сохраняем идентификатор в куках
             identity.remember(user_uuid);

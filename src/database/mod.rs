@@ -91,7 +91,7 @@ impl Database{
     }
 
     /// Пытаемся найти нового пользователя для FB ID 
-    #[instrument(err)]
+    #[instrument(err, skip(self))]
     pub async fn try_to_find_user_uuid_with_fb_id(&self, facebook_uuid: &str) -> Result<Option<String>, AppError>{
         struct Res{
             app_user_uuid: String
@@ -118,7 +118,7 @@ impl Database{
         Ok(res)
     }
 
-    #[instrument(err)]
+    #[instrument(err, skip(self))]
     pub async fn insert_facebook_user_with_uuid(&self, app_user_uuid: &str, facebook_uuid: &str) -> Result<(), AppError>{
         // Стартуем транзакцию, если будет ошибка, то вызовется rollback автоматически в drop
         // если все хорошо, то руками вызываем commit
@@ -169,7 +169,7 @@ impl Database{
         Ok(())
     }
 
-    #[instrument(err)]
+    #[instrument(err, skip(self))]
     pub async fn append_facebook_user_for_uuid(&self, app_user_uuid: &str, facebook_uuid: &str) -> Result<(), AppError>{
         // Стартуем транзакцию, если будет ошибка, то вызовется rollback автоматически в drop
         // если все хорошо, то руками вызываем commit
@@ -209,7 +209,7 @@ impl Database{
     }
 
     /// Пытаемся найти нового пользователя для Google ID 
-    #[instrument(err)]
+    #[instrument(err, skip(self))]
     pub async fn try_to_find_user_uuid_with_google_id(&self, google_uuid: &str) -> Result<Option<String>, AppError>{
         struct Res{
             app_user_uuid: String
@@ -236,7 +236,7 @@ impl Database{
         Ok(res)
     }
 
-    #[instrument(err)]
+    #[instrument(err, skip(self))]
     pub async fn insert_google_user_with_uuid(&self, app_user_uuid: &str, google_uuid: &str) -> Result<(), AppError>{
         // Стартуем транзакцию, если будет ошибка, то вызовется rollback автоматически в drop
         // если все хорошо, то руками вызываем commit
@@ -286,7 +286,7 @@ impl Database{
         Ok(())
     }
 
-    #[instrument(err)]
+    #[instrument(err, skip(self))]
     pub async fn append_google_user_for_uuid(&self, app_user_uuid: &str, google_uuid: &str) -> Result<(), AppError>{
         // Стартуем транзакцию, если будет ошибка, то вызовется rollback автоматически в drop
         // если все хорошо, то руками вызываем commit
@@ -325,7 +325,7 @@ impl Database{
     }
 
     /// Пытаемся найти нового пользователя для FB ID 
-    #[instrument(err)]
+    #[instrument(err, skip(self))]
     pub async fn try_find_full_user_info_for_uuid(&self, app_user_uuid: &str) -> Result<Option<UserInfo>, AppError>{
         // Специальным образом описываем, что поле действительно может быть нулевым с 
         // помощью вопросика в переименовании - as 'facebook_uid?'
@@ -357,14 +357,14 @@ impl Database{
     }
 
     /// Пытаемся найти нового пользователя для FB ID 
-    #[instrument(err)]
-    pub async fn does_user_uuid_exist(&self, uuid: &str) -> Result<bool, AppError>{
+    #[instrument(err, skip(self))]
+    pub async fn does_user_uuid_exist(&self, app_user_uuid: &str) -> Result<bool, AppError>{
         // TODO: Более оптимальный вариант
         let res = sqlx::query!(r#"   
                                     SELECT app_user_uuid 
                                     FROM app_users 
                                     WHERE app_users.app_user_uuid = ?
-                                "#, uuid)
+                                "#, app_user_uuid)
             .fetch_optional(&self.db)
             .await
             .map_err(AppError::from)
