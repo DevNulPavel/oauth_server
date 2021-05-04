@@ -63,7 +63,7 @@ fn get_callback_address(base_url: &str) -> String {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Данный метод вызывается при нажатии на кнопку логина в Facebook
-#[instrument(fields(callback_site_address))]
+#[instrument(err, skip(req, app_params, google_params, fb_params), fields(callback_site_address))]
 pub async fn login_with_google(req: actix_web::HttpRequest,
                                app_params: web::Data<AppEnvParams>,
                                google_params: web::Data<GoogleEnvParams>,
@@ -104,7 +104,7 @@ pub async fn login_with_google(req: actix_web::HttpRequest,
 pub struct GoogleAuthParams{
     code: String
 }
-#[instrument(skip(identity), fields(callback_site_address))]
+#[instrument(err, skip(req, identity, google_params, query_params, app_params, http_client, db), fields(callback_site_address))]
 pub async fn google_auth_callback(req: actix_web::HttpRequest,
                                   app_params: web::Data<AppEnvParams>,
                                   query_params: web::Query<GoogleAuthParams>, 

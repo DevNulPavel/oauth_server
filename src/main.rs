@@ -24,9 +24,6 @@ use actix_identity::{
     CookieIdentityPolicy, 
     IdentityService
 };
-use tracing::{
-    debug_span
-};
 use tracing_subscriber::{
     prelude::{
         *
@@ -72,10 +69,12 @@ fn initialize_logs() -> LogGuards{
 
     // Логи в stdout
     let stdoud_sub = tracing_subscriber::fmt::layer()
-        .with_thread_names(true)
-        .with_thread_ids(true)
-        .with_ansi(true)
-        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
+        // .with_thread_names(true)
+        // .with_thread_ids(true)
+        // .with_ansi(true)
+        // .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
+        // .compact()
+        // .pretty()
         .with_writer(std::io::stdout);
 
     // Логи opentelemetry
@@ -136,10 +135,6 @@ async fn main() -> std::io::Result<()> {
 
     // Инициализируем менеджер логирования
     let _log_guard = initialize_logs();
-
-    // Базовый span для логирования
-    let span = debug_span!("root_span");
-    let _span_guard = span.enter();
 
     // Получаем параметры приложения
     let app_env_params = web::Data::new(AppEnvParams::get_from_env());

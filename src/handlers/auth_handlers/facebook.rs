@@ -67,7 +67,7 @@ fn get_callback_address(base_url: &str) -> String {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Данный метод вызывается при нажатии на кнопку логина в Facebook
-#[instrument(fields(callback_site_address))]
+#[instrument(err, skip(req, app_params, fb_params), fields(callback_site_address))]
 pub async fn login_with_facebook(req: actix_web::HttpRequest, 
                                  app_params: web::Data<AppEnvParams>,
                                  fb_params: web::Data<FacebookEnvParams>) -> Result<web::HttpResponse, AppError> {
@@ -114,7 +114,7 @@ pub struct FacebookAuthParams{
     code: String,
     // scope: String
 }
-#[instrument(skip(identity), fields(callback_site_address))]
+#[instrument(err, skip(req, app_params, query_params, identity, fb_params, http_client, db), fields(callback_site_address))]
 pub async fn facebook_auth_callback(req: actix_web::HttpRequest,
                                     app_params: web::Data<AppEnvParams>,
                                     query_params: web::Query<FacebookAuthParams>, 
@@ -122,7 +122,7 @@ pub async fn facebook_auth_callback(req: actix_web::HttpRequest,
                                     fb_params: web::Data<FacebookEnvParams>,
                                     http_client: web::Data<reqwest::Client>,
                                     db: web::Data<Database>) -> Result<web::HttpResponse, AppError> {
-    debug!("Request object: {:?}", req);
+    // debug!("Request object: {:?}", req);
     debug!("Facebook auth callback query params: {:?}", query_params);
 
     let callback_site_address = get_callback_address(app_params.app_base_url.as_str());
