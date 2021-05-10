@@ -32,10 +32,10 @@ use tracing_subscriber::{
 use tracing_actix_web::{
     TracingLogger
 };
-use tracing_bunyan_formatter::{
-    JsonStorageLayer, 
-    BunyanFormattingLayer
-};
+// use tracing_bunyan_formatter::{
+//     JsonStorageLayer, 
+//     BunyanFormattingLayer
+// };
 use crate::{
     app_params::{
         FacebookEnvParams,
@@ -54,8 +54,8 @@ use crate::{
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct LogGuards{
-    _file_appender_guard: tracing_appender::non_blocking::WorkerGuard,
-    _opentelemetry_uninstall: opentelemetry_jaeger::Uninstall
+    // _file_appender_guard: tracing_appender::non_blocking::WorkerGuard,
+    // _opentelemetry_uninstall: opentelemetry_jaeger::Uninstall
 }
 
 fn initialize_logs() -> LogGuards{
@@ -78,28 +78,28 @@ fn initialize_logs() -> LogGuards{
         // .event_format(tracing_subscriber::fmt::format().pretty())
         .with_writer(std::io::stdout);
 
-    // Логи opentelemetry
-    let (opentelemetry_tracer, _opentelemetry_uninstall) = opentelemetry_jaeger::new_pipeline()
-        .with_service_name("oauth_server")
-        .install()
-        .unwrap();
-    /*let (opentelemetry_tracer, _un) = opentelemetry::sdk::export::trace::stdout::new_pipeline()
-        .install();*/
-    let opentelemetry_sub = tracing_opentelemetry::layer()
-        .with_tracer(opentelemetry_tracer);
+    // // Логи opentelemetry
+    // let (opentelemetry_tracer, _opentelemetry_uninstall) = opentelemetry_jaeger::new_pipeline()
+    //     .with_service_name("oauth_server")
+    //     .install()
+    //     .unwrap();
+    // /*let (opentelemetry_tracer, _un) = opentelemetry::sdk::export::trace::stdout::new_pipeline()
+    //     .install();*/
+    // let opentelemetry_sub = tracing_opentelemetry::layer()
+    //     .with_tracer(opentelemetry_tracer);
 
-    // Bunyan 
-    let app_name = concat!(env!("CARGO_PKG_NAME"), "-", env!("CARGO_PKG_VERSION")).to_string();
-    let (non_blocking_appender, _file_appender_guard) = tracing_appender::non_blocking(tracing_appender::rolling::hourly("logs", "app_log"));    
-    let bunyan_formatting_layer = BunyanFormattingLayer::new(app_name, non_blocking_appender);
+    // // Bunyan 
+    // let app_name = concat!(env!("CARGO_PKG_NAME"), "-", env!("CARGO_PKG_VERSION")).to_string();
+    // let (non_blocking_appender, _file_appender_guard) = tracing_appender::non_blocking(tracing_appender::rolling::hourly("logs", "app_log"));    
+    // let bunyan_formatting_layer = BunyanFormattingLayer::new(app_name, non_blocking_appender);
 
     // Суммарный обработчик
     let full_subscriber = tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::default()
-                .add_directive(tracing::Level::TRACE.into())
-                .and_then(JsonStorageLayer)
-                .and_then(bunyan_formatting_layer)
-                .and_then(opentelemetry_sub))
+        // .with(tracing_subscriber::EnvFilter::default()
+        //         .add_directive(tracing::Level::TRACE.into())
+        //         .and_then(JsonStorageLayer)
+        //         .and_then(bunyan_formatting_layer)
+        //         .and_then(opentelemetry_sub))
         .with(tracing_subscriber::EnvFilter::from_default_env() // TODO: Почему-то все равно не работает
                 .and_then(stdoud_sub));
 
@@ -107,8 +107,8 @@ fn initialize_logs() -> LogGuards{
     tracing::subscriber::set_global_default(full_subscriber).unwrap();
 
     LogGuards{
-        _file_appender_guard,
-        _opentelemetry_uninstall
+        // _file_appender_guard,
+        // _opentelemetry_uninstall
     }
 }
 
