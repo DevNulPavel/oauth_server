@@ -53,14 +53,20 @@ impl Database{
             const PREFIX: &str = "sqlite://";
             assert!(db_url.starts_with(PREFIX), "DATABASE_URL must stats with {}", PREFIX);
 
-            let file_path = std::path::Path::new(db_url.trim_start_matches(PREFIX));
+            let file_path = std::path::Path::new(db_url
+                                                    .trim_start_matches(PREFIX)
+                                                    .trim_end());
             if !file_path.exists() {
-                if let Some(dir) = file_path.parent(){
-                    std::fs::create_dir_all(dir)
-                        .expect("Database directory create failed");
+                if let Some(dir) = file_path.parent() {
+                    if !dir.exists() {
+                        info!(?dir, "Database directory created");
+                        std::fs::create_dir_all(dir)
+                            .expect("Database directory create failed");
+                    }
                 }
                 std::fs::File::create(file_path)
                     .expect("Database file create failed");
+                info!(?file_path, "Database file created");
             }
         }
 
