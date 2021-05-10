@@ -1,0 +1,127 @@
+{
+  "db": "SQLite",
+  "08521f12c5f1aa3190862a62ee8f353f0a4975ce906ecbf6cb8042b623fd7ceb": {
+    "query": "\n                    INSERT INTO google_users(google_uuid, app_user_uuid)\n                    VALUES (?, ?);\n                ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  },
+  "0aa48080a9a6b6cb3c0fa1d1001f91c9b96181e8fd08ca6b8770d4b00cbc8429": {
+    "query": "   \n                            SELECT app_user_uuid\n                            FROM google_users \n                            WHERE google_users.google_uuid = ?\n                        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "app_user_uuid",
+          "ordinal": 0,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "15331e78c1b728cd71f5ca4a6426d028a5a26d2a46c7e23e4e7ce8e5555b4be0": {
+    "query": "\n                    INSERT INTO app_users(app_user_uuid)\n                    VALUES (?);\n                ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
+    }
+  },
+  "535c7f8598aee93a8ff3ecbb3310dc2b211ef08cf260c1bc19b86170803afcba": {
+    "query": "\n                    INSERT INTO app_users(app_user_uuid)\n                        VALUES (?);\n                ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
+    }
+  },
+  "c68a1abded23ceb33e454989ca185f3c56a6512aa80f40fe683118627e5871c6": {
+    "query": "   \n                                    SELECT app_user_uuid \n                                    FROM app_users \n                                    WHERE app_users.app_user_uuid = ?\n                                ",
+    "describe": {
+      "columns": [
+        {
+          "name": "app_user_uuid",
+          "ordinal": 0,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        true
+      ]
+    }
+  },
+  "cf1fa277ab8394cb17287ef1d050ada5d68e10a777a082f2327251248dfc6958": {
+    "query": "   \n                    SELECT facebook_users.app_user_uuid\n                    FROM facebook_users \n                    WHERE facebook_users.facebook_uuid = ?\n                ",
+    "describe": {
+      "columns": [
+        {
+          "name": "app_user_uuid",
+          "ordinal": 0,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "dc506b663b2fa185f3918b355efac9033f69a44726b39d578fd92f5c8860761f": {
+    "query": "\n                    INSERT INTO facebook_users(facebook_uuid, app_user_uuid)\n                    VALUES (?, ?);\n                ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  },
+  "f01740c37fb493e4ace421368fe992c1a008199d4951b24048d5518e1dd42e27": {
+    "query": "   \n                    SELECT \n                        app_users.app_user_uuid AS \"app_user_uuid!\", \n                        facebook_users.facebook_uuid AS \"facebook_uuid?\",\n                        google_users.google_uuid AS \"google_uuid?\"\n                    FROM app_users\n                    LEFT JOIN facebook_users\n                        ON facebook_users.app_user_uuid = app_users.app_user_uuid\n                    LEFT JOIN google_users\n                        ON google_users.app_user_uuid = app_users.app_user_uuid\n                    WHERE app_users.app_user_uuid = ?\n                ",
+    "describe": {
+      "columns": [
+        {
+          "name": "app_user_uuid!",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "facebook_uuid?",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "google_uuid?",
+          "ordinal": 2,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        true,
+        true,
+        true
+      ]
+    }
+  }
+}
