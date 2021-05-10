@@ -1,0 +1,2 @@
+CREATE INDEX google_app_user_search_index ON google_users(app_user_uuid);
+CREATE INDEX facebook_app_user_search_index ON facebook_users(app_user_uuid);
