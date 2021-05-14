@@ -101,7 +101,9 @@ fn initialize_logs() -> LogGuards{
         //         .and_then(bunyan_formatting_layer)
         //         .and_then(opentelemetry_sub))
         .with(tracing_subscriber::EnvFilter::from_default_env() // TODO: Почему-то все равно не работает
-                .and_then(stdoud_sub));
+                .and_then(stdoud_sub))
+        .with(tracing_error::ErrorLayer::default());
+
 
     // Установка по-умолчанию
     tracing::subscriber::set_global_default(full_subscriber).unwrap();

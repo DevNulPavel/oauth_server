@@ -11,6 +11,9 @@ use actix_web::{
     HttpResponse,
     ResponseError
 };
+use tracing_error::{
+    SpanTrace
+};
 use serde_json::{
     json
 };
@@ -25,42 +28,42 @@ quick_error!{
     #[derive(Debug)]
     pub enum AppError{
         /// Не смогли отрендерить шаблон
-        TemplateRenderError(err: handlebars::RenderError){
-            from()
+        TemplateRenderError(trace: SpanTrace, err: handlebars::RenderError){
+            from(err: handlebars::RenderError) -> (SpanTrace::capture(), err)
         }
 
         /// Не смогли отрендерить шаблон
-        ActixError(err: actix_web::Error){
-            from()
+        ActixError(trace: SpanTrace, err: actix_web::Error){
+            from(err: actix_web::Error) -> (SpanTrace::capture(), err)
         }
 
         /// Ошибка парсинга адреса
-        URLParseError(err: url::ParseError){
-            from()
+        URLParseError(trace: SpanTrace, err: url::ParseError){
+            from(err: url::ParseError) -> (SpanTrace::capture(), err)
         }
 
         /// Ошибка у внутреннего запроса с сервера на какое-то API
-        InternalReqwestLibraryError(context: &'static str, err: reqwest::Error){
-            context(context: &'static str, err: reqwest::Error) -> (context, err)
+        InternalReqwestLibraryError(trace: SpanTrace, context: &'static str, err: reqwest::Error){
+            context(context: &'static str, err: reqwest::Error) -> (SpanTrace::capture(), context, err)
         }
 
         /// Сервер Facebook ответил ошибкой какой-то
-        FacebookApiError(err: FacebookErrorResponse){
-            from()
+        FacebookApiError(trace: SpanTrace, err: FacebookErrorResponse){
+            from(err: FacebookErrorResponse) -> (SpanTrace::capture(), err)
         }
 
         /// Сервер Google ответил ошибкой какой-то
-        GoogleApiError(err: GoogleErrorResponse){
-            from()
+        GoogleApiError(trace: SpanTrace, err: GoogleErrorResponse){
+            from(err: GoogleErrorResponse) -> (SpanTrace::capture(), err)
         }
 
         /// Произошла ошибка работы с базой данных
-        DatabaseError(err: sqlx::Error){
-            from()
+        DatabaseError(trace: SpanTrace, err: sqlx::Error){
+            from(err: sqlx::Error) -> (SpanTrace::capture(), err)
         }
 
         /// Ошибка с произвольным описанием
-        Custom(err: String){
+        Custom(trace: SpanTrace, err: String){
         }
     }
 }
