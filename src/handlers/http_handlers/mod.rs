@@ -15,12 +15,18 @@ use tap::{
         *
     }
 };
+use serde::{
+    Deserialize
+};
 use tracing::{
     instrument,
     error,
     info
     // debug_span, 
     // debug,
+};
+use tracing_error::{
+    SpanTrace
 };
 use crate::{
     error::{
@@ -39,12 +45,35 @@ use crate::{
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#[derive(Deserialize, Debug)]
+pub struct IndexQueryParams{
+    custom_client_url: Option<String>
+}
+
 #[instrument(err, skip(handlebars, app_params), fields(app_user_id = %full_info.app_user_uuid))]
 pub async fn index(handlebars: web::Data<Handlebars<'_>>, 
                    app_params: web::Data<AppEnvParams>,
+                   query: web::Query<IndexQueryParams>,
                    full_info: UserInfo) -> Result<web::HttpResponse, AppError> {
     
-    let mut game_url = app_params.game_url.clone();
+    // Custom application url?
+    let mut game_url = match query.custom_client_url.as_ref() {
+        Some(query) => {
+            let url = url::Url::parse(query.as_str())?;
+
+            // Сверим, что доменное имя такое же, как и у нормальной ссылки
+            if app_params.game_url.domain() != url.domain(){
+                return Err(AppError::Custom(SpanTrace::capture(), "Custom url must be from the same domain".to_owned()));
+            }
+
+            url
+        },
+        None => {
+            app_params.game_url.clone()
+        }
+    };
+
+    // Client url parameters
     game_url.query_pairs_mut().append_pair("uuid", &full_info.app_user_uuid);
     game_url.query_pairs_mut().append_pair("facebook_uid", &full_info.facebook_uuid.as_deref().unwrap_or(""));
     game_url.query_pairs_mut().append_pair("google_uid", &full_info.google_uuid.as_deref().unwrap_or(""));

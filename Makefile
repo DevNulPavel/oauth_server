@@ -38,7 +38,7 @@ DECRYPT_GOOGLE_CREDENTIALS:
 
 RUN_SERVER:
 	source credentials/test_environment.env && \
-	cargo run --release
+	cargo run
 
 ########################################################################################
 
