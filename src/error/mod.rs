@@ -37,6 +37,11 @@ quick_error!{
             from(err: actix_web::Error) -> (SpanTrace::capture(), err)
         }
 
+        /// Ошибка в
+        ActixHTTPError(trace: SpanTrace, err: actix_web::http::Error){
+            from(err: actix_web::http::Error) -> (SpanTrace::capture(), err)
+        }
+
         /// Ошибка парсинга адреса
         URLParseError(trace: SpanTrace, err: url::ParseError){
             from(err: url::ParseError) -> (SpanTrace::capture(), err)

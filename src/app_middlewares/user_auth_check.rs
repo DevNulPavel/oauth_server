@@ -59,7 +59,7 @@ use crate::{
 
 pub fn create_auth_check_middleware<F>(if_exists: bool, fail_callback: F) -> AuthCheck
 where
-    F: Fn() -> HttpResponse + 'static
+    F: Fn(&ServiceRequest) -> HttpResponse + 'static
 {
     AuthCheck{
         if_exists,
@@ -72,7 +72,7 @@ where
 // Структура нашего конвертера в миддлевару
 pub struct AuthCheck{
     if_exists: bool,
-    fail_callback: Arc<dyn Fn() -> HttpResponse> // TODO: в шаблоны?
+    fail_callback: Arc<dyn Fn(&ServiceRequest) -> HttpResponse> // TODO: в шаблоны?
 }
 
 // Реализация трансформа для перехода в Middleware
@@ -109,7 +109,7 @@ pub struct AuthCheckMiddleware<S> {
     // https://github.com/casbin-rs/actix-casbin-auth/blob/master/src/middleware.rs
     service: Rc<RefCell<S>>,
     if_exists: bool,
-    fail_callback: Arc<dyn Fn() -> HttpResponse> // TODO: в шаблоны?
+    fail_callback: Arc<dyn Fn(&ServiceRequest) -> HttpResponse> // TODO: в шаблоны?
 }
 
 /// Реализация работы Middleware сервиса
@@ -170,7 +170,7 @@ where
                 srv.call(req).await
             }else{
                 // Переходим куда надо если нет данных о пользователе
-                let http_redirect_resp = fail_callback().into_body();
+                let http_redirect_resp = fail_callback(&req).into_body();
                 Ok(req.into_response(http_redirect_resp))
             }
         })

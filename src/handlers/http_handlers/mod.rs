@@ -2,7 +2,8 @@
 use actix_web::{
     web::{
         self
-    }
+    },
+    HttpMessage
 };
 use handlebars::{
     Handlebars
@@ -51,7 +52,8 @@ pub struct IndexQueryParams{
 }
 
 #[instrument(err, skip(handlebars, app_params), fields(app_user_id = %full_info.app_user_uuid))]
-pub async fn index(handlebars: web::Data<Handlebars<'_>>, 
+pub async fn index(req: web::HttpRequest, 
+                   handlebars: web::Data<Handlebars<'_>>, 
                    app_params: web::Data<AppEnvParams>,
                    query: web::Query<IndexQueryParams>,
                    full_info: UserInfo) -> Result<web::HttpResponse, AppError> {
@@ -93,15 +95,21 @@ pub async fn index(handlebars: web::Data<Handlebars<'_>>,
 
     info!("Index rendered");
 
-    Ok(web::HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(body))
+    let mut response = web::HttpResponse::Ok();
+    response.content_type("text/html; charset=utf-8");
+    if let Some(target_client_url_cookie) = req.cookie("target_client_url"){
+        response
+            .del_cookie(&target_client_url_cookie);
+    };
+    Ok(response.body(body))
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[instrument(err, skip(handlebars))]
-pub async fn login_page(handlebars: web::Data<Handlebars<'_>>) -> Result<web::HttpResponse, AppError> {
+pub async fn login_page(req: web::HttpRequest, 
+                        handlebars: web::Data<Handlebars<'_>>, 
+                        query: web::Query<IndexQueryParams>) -> Result<web::HttpResponse, AppError> {
     let body = handlebars.render(constants::LOGIN_TEMPLATE, &serde_json::json!({}))
         .tap_err(|err|{
             error!("Template render failed: {}", err);
@@ -109,9 +117,25 @@ pub async fn login_page(handlebars: web::Data<Handlebars<'_>>) -> Result<web::Ht
 
     info!("Login rendered");
 
-    Ok(web::HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(body))
+    let mut response = web::HttpResponse::Ok();
+    response.content_type("text/html; charset=utf-8");
+
+    // Сохраним в куку значение кастомного адреса
+    if let Some(custom_client_addr) = &query.custom_client_url{
+        info!(%custom_client_addr, "Custom client url at login");
+        // TODO: короткое время жизни куки
+        let cookie = actix_web::http::Cookie::build("target_client_url", custom_client_addr)
+            .finish();
+        response.cookie(cookie);
+    }else{
+        // Либо удалим если уже были какие-то
+        if let Some(target_client_url_cookie) = req.cookie("target_client_url"){
+            response
+                .del_cookie(&target_client_url_cookie);
+        };
+    }
+
+    Ok(response.body(body))
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////

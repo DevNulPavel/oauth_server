@@ -28,9 +28,10 @@ pub fn retup_routes(config: &mut web::ServiceConfig) {
     config
         .service(web::resource(constants::INDEX_PATH)
                     .wrap(create_user_info_middleware(
-                            || {
+                            |req| {
+                                let path = format!("{}?{}", constants::LOGIN_PATH, req.query_string());
                                 web::HttpResponse::Found()
-                                    .header(actix_web::http::header::LOCATION, constants::LOGIN_PATH)
+                                    .header(actix_web::http::header::LOCATION, path.as_str())
                                     .finish()
                             }))
                     .route(web::route()
@@ -39,9 +40,10 @@ pub fn retup_routes(config: &mut web::ServiceConfig) {
         .service(web::resource(constants::LOGIN_PATH)
                     .wrap(create_auth_check_middleware(
                             false,
-                            || {
+                            |req| {
+                                let path = format!("{}?{}", constants::INDEX_PATH, req.query_string());
                                 web::HttpResponse::Found()
-                                    .header(actix_web::http::header::LOCATION, constants::INDEX_PATH)
+                                    .header(actix_web::http::header::LOCATION, path.as_str())
                                     .finish()
                             }))
                     .route(web::route()

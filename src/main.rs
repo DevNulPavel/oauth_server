@@ -167,7 +167,7 @@ async fn main() -> std::io::Result<()> {
             let identity_middleware = {
                 let policy = CookieIdentityPolicy::new(&private_key)
                     .name("auth-logic")
-                    .max_age(60 * 60 * 24 * 30) // 30 дней максимум
+                    .max_age(60 * 60 * 24 * 60) // 30 дней максимум
                     .http_only(true)
                     .secure(false);
                 IdentityService::new(policy)

@@ -1,7 +1,8 @@
 use actix_web::{
     web::{
         self
-    }
+    },
+    HttpMessage
 };
 use tracing::{
     debug
@@ -112,7 +113,8 @@ pub struct FacebookAuthParams{
     // scope: String
 }
 #[instrument(err, skip(app_params, query_params, identity, fb_params, http_client, db))]
-pub async fn facebook_auth_callback(app_params: web::Data<AppEnvParams>,
+pub async fn facebook_auth_callback(req: actix_web::HttpRequest,
+                                    app_params: web::Data<AppEnvParams>,
                                     query_params: web::Query<FacebookAuthParams>, 
                                     identity: Identity,
                                     fb_params: web::Data<FacebookEnvParams>,
@@ -218,8 +220,18 @@ pub async fn facebook_auth_callback(app_params: web::Data<AppEnvParams>,
         }
     }
 
+    let mut response = web::HttpResponse::Found();
+
+    // Если в куках у нас сохранены значения кастомного урла, добавляем его к пути
+    if let Some(target_client_url_cookie) = req.cookie("target_client_url"){
+        let path = format!("{}?custom_client_url={}", constants::INDEX_PATH, target_client_url_cookie.value());
+        response
+            .header(actix_web::http::header::LOCATION, path)
+            .del_cookie(&target_client_url_cookie);
+    }else{
+        response.header(actix_web::http::header::LOCATION, constants::INDEX_PATH);
+    };
+
     // Возвращаем код 302 и Location в заголовках для перехода
-    Ok(web::HttpResponse::Found()
-        .header(actix_web::http::header::LOCATION, constants::INDEX_PATH)
-        .finish())
+    Ok(response.finish())
 }

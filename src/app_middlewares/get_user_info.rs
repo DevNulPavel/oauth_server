@@ -83,7 +83,7 @@ impl actix_web::FromRequest for UserInfo {
 
 pub fn create_user_info_middleware<F>(no_user_response_fn: F) -> UserInfoProvider
 where
-    F: Fn() -> HttpResponse + 'static
+    F: Fn(&ServiceRequest) -> HttpResponse + 'static
 {
     UserInfoProvider{
         no_user_response_fn: Arc::new(no_user_response_fn)
@@ -94,7 +94,7 @@ where
 
 // Структура нашего конвертера в миддлевару
 pub struct UserInfoProvider{
-    pub no_user_response_fn: Arc<dyn Fn() -> HttpResponse> // TODO: в шаблоны?
+    pub no_user_response_fn: Arc<dyn Fn(&ServiceRequest) -> HttpResponse> // TODO: в шаблоны?
 }
 
 // Реализация трансформа для перехода в Middleware
@@ -130,7 +130,7 @@ pub struct UserInfoMiddleware<S> {
     // https://github.com/casbin-rs/actix-casbin-auth/blob/master/src/middleware.rs
     // service: Arc<Mutex<S>>,
     service: Rc<RefCell<S>>,
-    no_user_response_fn: Arc<dyn Fn() -> HttpResponse> // TODO: в шаблоны?
+    no_user_response_fn: Arc<dyn Fn(&ServiceRequest) -> HttpResponse> // TODO: в шаблоны?
 }
 
 /// Реализация работы Middleware сервиса
@@ -188,7 +188,7 @@ where
                 },
                 None => {
                     // Переходим куда надо если нет данных о пользователе
-                    let http_redirect_resp = no_user_response_fn().into_body();
+                    let http_redirect_resp = no_user_response_fn(&req).into_body();
                     Ok(req.into_response(http_redirect_resp))
                 }
             }
